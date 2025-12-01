@@ -14,12 +14,18 @@ import torch
 import torch.optim as optim
 import os
 import sys
+import json
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 torch.cuda.set_device(0)
 
-# Configuration parameters
-params = {
+override_path = os.environ.get("NEUROSORT_PARAMS_JSON")
+if override_path and os.path.exists(override_path):
+    with open(override_path) as f:
+        params = json.load(f)
+else:
+    # Configuration parameters
+    params = {
     # set preprocessing and detection parameters 
     'filter': 'bandpass',
     'filter_low': 250,
@@ -57,6 +63,8 @@ directory = params.get('directory')
 filename = params.get('filename')
 # Save the output data to subdirectory
 output_directory = os.path.join(directory, 'results')
+if not os.path.exists(output_directory):
+    os.makedirs(output_directory, exist_ok=True)
 if params.get('encoder_filename') is not None or params.get('decoder_filename') is not None:
     model_directory = os.path.join(output_directory, params.get('model_output_dictionary'))
     if not os.path.exists(model_directory):
