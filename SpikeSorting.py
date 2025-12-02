@@ -56,7 +56,10 @@ else:
     'decoder_filename': None,  
     'amplifier_filtered_filename': None,  #If not None, .h5 file will be used to save preprocessed data, not fast mode
     'spikeInfo_filename': 'spikeInfo.h5',  # used to save results, including spike time, channel
-    'save_waveform': False
+    'save_waveform': False,
+    # New options for preprocessed input
+    'skip_preprocessing': False,  # If True, skip bandpass filter + CAR (data already processed)
+    'input_dtype': 'int16',  # 'int16' for raw ADC data, 'float32' for preprocessed data
 }
 
 directory = params.get('directory')
@@ -84,7 +87,9 @@ if __name__ == '__main__':
         print(f"{spikeInfo_filepath} is not exits, will create this file.")
         # Input the location of your electrophysiology data
         file_path = os.path.join(directory, filename)
-        data = np.memmap(file_path, dtype=np.int16, mode='r')
+        # Support both raw int16 and preprocessed float32 data
+        input_dtype = np.dtype(params.get('input_dtype', 'int16'))
+        data = np.memmap(file_path, dtype=input_dtype, mode='r')
         data = data.reshape(-1, params.get('num_channels')).T
         # Initialize the SpikeDetection object with the parameters
         detector = SpikeDetection(params, output_directory)

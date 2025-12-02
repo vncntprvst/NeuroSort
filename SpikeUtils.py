@@ -38,8 +38,21 @@ class SpikeDetection:
         self.max_workers_detect = params.get('max_workers_detect')
         self.max_workers_preprocess = params.get('max_workers_preprocess')
         self.file_lock = threading.Lock()
+        # New: skip preprocessing if data is already filtered (e.g., from SpikeInterface)
+        self.skip_preprocessing = params.get('skip_preprocessing', False)
+        # dtype for reading raw data (int16 for raw ADC, float32 for preprocessed)
+        self.input_dtype = params.get('input_dtype', 'int16')
 
     def run_preprocess(self, data):
+        # Skip preprocessing if data is already filtered (e.g., from SpikeInterface)
+        if self.skip_preprocessing:
+            print("Skipping bandpass filter and CAR - data assumed to be already filtered.")
+            # Still need to convert ADC int16 to µV (float32) for spike detection thresholds
+            # The adc_to_uV scaling is still applied since data is in raw ADC units
+            self.filtered_data = data.astype(np.float32) * self.adc_to_uV
+            print(f"Applied ADC→µV scaling (factor: {self.adc_to_uV})")
+            return 0.0  # No preprocessing time
+        
         if self.amplifier_filtered_filepath is not None:
             if os.path.exists(self.amplifier_filtered_filepath):
                 os.remove(self.amplifier_filtered_filepath)
